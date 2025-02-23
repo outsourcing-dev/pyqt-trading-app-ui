@@ -16,11 +16,15 @@ from chart.trade_marker import TradeMarker
 from data.data_fetcher import DataFetcher
 from utils.naver_time import NaverTimeFetcher
 from chart.profit_rate_chart import TotalProfitChart
+from ui.components.trade_history_table import TradeHistoryTable
+from ui.components.profit_rate_table import ProfitRateTable
 
 class TradingView(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Trading Platform')
+        
+        self.total_profit_rate = 0.0        
 
         #폰트 로드
         self.load_custom_fonts()
@@ -45,7 +49,29 @@ class TradingView(QMainWindow):
         self.time_timer.timeout.connect(self.update_time)
         self.time_timer.start(1000)  # 1초마다 업데이트
         
+        # 수익률 업데이트 타이머 설정 (하루에 한 번)
+        self.profit_timer = QTimer()
+        self.profit_timer.timeout.connect(self.update_total_profit)
+        self.profit_timer.start(24 * 60 * 60 * 1000)  # 24시간마다 업데이트
 
+    def update_total_profit(self):
+        """일일 총 수익률 업데이트"""
+        # TODO: 실제 총 수익률 계산 로직 구현
+        # 예: self.total_profit_rate = (현재_잔고 - 초기_잔고) / 초기_잔고 * 100
+        
+        # 테스트용 임시 코드
+        self.total_profit_rate += np.random.uniform(-10, 10)
+        
+        # 차트 업데이트
+        self.profit_chart.update_chart(self.total_profit_rate)
+        
+        # 테이블 업데이트
+        item = QTableWidgetItem(f'{self.total_profit_rate:+.2f}%')
+        item.setTextAlignment(Qt.AlignCenter)
+        color = '#4CAF50' if self.total_profit_rate >= 0 else '#FF5252'
+        item.setForeground(QColor(color))
+        self.right_table.setItem(5, 0, item)  # 마지막 행이 Total Profit Rate
+        
     def setup_focus_policy(self):
         """테이블 포커스 정책 설정"""
         # 테이블 위젯에 이벤트 필터 설치
@@ -104,8 +130,6 @@ class TradingView(QMainWindow):
                 if font_id != -1:
                     font_families.extend(QFontDatabase.applicationFontFamilies(font_id))
                     
-
-
     def setup_ui(self):
         # 메인 윈도우 설정
         main_widget = QWidget()
@@ -169,16 +193,20 @@ class TradingView(QMainWindow):
         left_layout.addWidget(self.left_chart_widget)
 
         # 3. 거래 기록 테이블
-        row_count = 1
-        self.left_table = QTableWidget(row_count, 5)
-        self.left_table.setHorizontalHeaderLabels([
-            'Coin Name', 'Quantity', 'Liquidation Price', 'Unrealized P/L (Profit Rate)', 'Realized P/L'
-        ])
-        self.left_table.setVerticalHeaderLabels([''])
-        self.left_table.setStyleSheet('background-color: #1e222d; color: white;')
-        self.left_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.left_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.left_table = TradeHistoryTable()
         left_layout.addWidget(self.left_table)
+
+        # 테스트용으로 데이터 넣어보기
+        test_trades = [
+            {
+                "coin": "BTC",
+                "quantity": 0.1234,
+                "liq_price": 50000.0,
+                "unrealized_pl": 5.2,
+                "realized_pl": 100.5
+            }
+        ]
+        self.left_table.update_trade_history(test_trades)
 
         # 오른쪽 레이아웃
         right_layout = QVBoxLayout()
@@ -194,43 +222,30 @@ class TradingView(QMainWindow):
         # 5. 오른쪽 차트 영역
         right_chart_widget = self.profit_chart.get_widget()
         right_layout.addWidget(right_chart_widget)
-        # now = datetime.datetime.now()
-        # y = np.array([1, 2, 3, 4])  # numpy 배열로 변환
-        # x = np.array(range(len(y)))  # x축도 numpy 배열로 생성
 
-        # # 날짜 레이블용 문자열 배열 따로 생성
-        # date_labels = []
-        # for i in range(len(y)):
-        #     date = now - relativedelta(days=i)
-        #     date_labels.append(date.strftime('%m-%d'))
-        # date_labels.reverse()
-
-        # right_chart_widget = pg.PlotWidget()
-        # right_chart_widget.setBackground('BLACK')
-        # right_chart_widget.showGrid(x=True, y=True)
-        # right_chart_widget.setMinimumSize(320, 200)
-        # right_chart_widget.setMaximumSize(320, 200)
-        # right_chart_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-
-        # # x축 눈금 레이블 설정
-        # axis = right_chart_widget.getAxis('bottom')
-        # axis.setTicks([[(i, date_labels[i]) for i in range(len(date_labels))]])
-
-        # # 숫자 배열로 플롯
-        # right_chart_widget.plot(x, y)
-        # right_layout.addWidget(right_chart_widget)
+        # 데모 데이터 주입
+        from datetime import datetime, timedelta
+        base_date = datetime.now()
+        dates = [(base_date - timedelta(days=i)).strftime('%m/%d') for i in range(6, -1, -1)]
+        test_data = [10.5, 15.2, -54.3, 8.7, 12.1, -3.2, 1055.5]
+        for date, profit in zip(dates, test_data):
+            self.profit_chart.daily_total_profits.append((date, profit))
+        self.profit_chart.update_display()
 
         # 6. 오른쪽 수익률 표시 영역
-        self.right_table = QTableWidget(6, 1)
-        self.right_table.setMinimumWidth(320)
-        self.right_table.setMaximumWidth(320)
-        self.right_table.setHorizontalHeaderLabels([''])
-        self.right_table.setVerticalHeaderLabels(['My Profit Rate', 'Daily', 'Weekly', 'Monthly', 'Yearly', 'Total Profit Rate'])
-        self.right_table.setStyleSheet('background-color: #1e222d; color: white;')
-        self.right_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.right_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.right_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.right_table = ProfitRateTable()
         right_layout.addWidget(self.right_table)
+        
+        # 테스트용 데이터
+        test_profit_data = {
+            'my_rate': 5.2,
+            'daily': 1.5,
+            'weekly': 4.2,
+            'monthly': 15.7,
+            'yearly': 45.2,
+            'total': 25.5
+        }
+        self.right_table.update_profit_rates(test_profit_data)
 
         self.apply_styles()  # UI 스타일 적용
         self.update_data()   # 초기 데이터 로드
@@ -291,39 +306,6 @@ class TradingView(QMainWindow):
                 color: #ffffff;
                 font-family: 'Mosk Normal 400';
             }
-            QTableWidget {
-                gridline-color: #3d4760;
-                border: none;
-                background-color: #2f3b54;
-                font-family: 'Mosk Normal 400';
-                font-size: 13px;
-            }
-            QTableWidget::item {
-                padding: 5px;
-                color: #e6e9ef;
-            }
-            /* 선택된 셀의 스타일 통일 */
-            QTableWidget::item:selected {
-                background-color: #3d4760;
-                color: #ffffff;
-            }
-            /* 포커스되지 않은 선택 셀의 스타일도 통일 */
-            QTableWidget::item:selected:!active {
-                background-color: #3d4760;
-                color: #ffffff;
-            }
-            QHeaderView::section {
-                background-color: #3d4760;
-                color: #ffffff;
-                padding: 5px;
-                border: 1px solid #2a3447;
-                font-family: 'Mosk Medium 500';
-                font-size: 14px;
-            }
-            QTableCornerButton::section {
-                background-color: #3d4760;
-                border: 1px solid #2a3447;
-            }
             QComboBox {
                 background-color: #3d4760;
                 color: #ffffff;
@@ -345,6 +327,18 @@ class TradingView(QMainWindow):
                 font-size: 16px;
             }
         ''')
+        
+        # 차트 축 폰트 설정
+        axis_font = QFont('Mosk Normal 400', 10)
+        self.left_chart_widget.getAxis('left').setTickFont(axis_font)
+        self.left_chart_widget.getAxis('bottom').setTickFont(axis_font)
+        
+        # 차트 배경 및 그리드 색상 설정
+        self.left_chart_widget.setBackground('#2f3b54')
+        self.left_chart_widget.getAxis('left').setPen('#4d5b7c')
+        self.left_chart_widget.getAxis('bottom').setPen('#4d5b7c')
+        self.left_chart_widget.getAxis('left').setTextPen('#e6e9ef')
+        self.left_chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
         
         # 차트 축 폰트 설정
         axis_font = QFont('Mosk Normal 400', 10)
