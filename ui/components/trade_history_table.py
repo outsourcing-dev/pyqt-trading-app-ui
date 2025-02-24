@@ -50,7 +50,6 @@ class TradeHistoryTable(QTableWidget):
             }
             QTableWidget::item {
                 padding: 5px;
-                color: #e6e9ef;
             }
             QTableWidget::item:selected {
                 background-color: #3d4760;
@@ -105,13 +104,19 @@ class TradeHistoryTable(QTableWidget):
         
         for row, trade in enumerate(trade_data):
             # 코인명
-            self.setItem(row, 0, QTableWidgetItem(trade['coin']))
-            
-            # 수량 (소수점 8자리까지)
-            self.setItem(row, 1, QTableWidgetItem(f"{trade['quantity']:.8f}"))
+            coin_item = QTableWidgetItem(trade['coin'])
+            coin_item.setForeground(QColor('#e6e9ef'))  # 흰색으로 설정
+            self.setItem(row, 0, coin_item)
+
+            # 수량 (소수점 2자리까지)
+            quantity_item = QTableWidgetItem(f"{trade['quantity']:.2f}")
+            quantity_item.setForeground(QColor('#e6e9ef'))  # 흰색으로 설정
+            self.setItem(row, 1, quantity_item)
             
             # 청산가 (소수점 2자리까지)
-            self.setItem(row, 2, QTableWidgetItem(f"{trade['liq_price']:.2f}"))
+            liq_price_item = QTableWidgetItem(f"{trade['liq_price']:.2f}")
+            liq_price_item.setForeground(QColor('#e6e9ef'))  # 흰색으로 설정
+            self.setItem(row, 2, liq_price_item)
             
             # 미실현 손익 (색상 적용)
             unrealized = QTableWidgetItem(f"{trade['unrealized_pl']:+.2f}%")
@@ -126,6 +131,10 @@ class TradeHistoryTable(QTableWidget):
                 QColor('#4CAF50' if trade['realized_pl'] >= 0 else '#FF5252')
             )
             self.setItem(row, 4, realized)
+            
+            # 모든 아이템 가운데 정렬
+            for col in range(5):
+                self.item(row, col).setTextAlignment(Qt.AlignCenter)
             
     def add_trade(self, trade):
         """새로운 거래 데이터 한 줄 추가"""

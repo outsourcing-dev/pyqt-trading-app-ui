@@ -9,6 +9,7 @@ import numpy as np
 import datetime
 from dateutil.relativedelta import relativedelta
 import os
+from datetime import datetime, timedelta
 
 # 차트 관련 클래스들 임포트
 from chart.candlestick import CandlestickItem
@@ -23,54 +24,50 @@ class TradingView(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Trading Platform')
+        self.total_profit_rate = 0.0
         
-        self.total_profit_rate = 0.0        
-
-        #폰트 로드
+        # 기본 설정
         self.load_custom_fonts()
-
-        # 윈도우 크기 설정 (16:9 비율인 1280x720 크기)
         self.setGeometry(200, 200, 1280, 720)
         
-        self.profit_chart = TotalProfitChart()  # 차트 인스턴스 생성
-
-        # 데이터 가져오기 객체와 거래 기록 초기화
+        # 컴포넌트 초기화
+        self.profit_chart = TotalProfitChart()
         self.data_fetcher = DataFetcher()
-        self.trades = []  # 전체 거래 기록
-        self.open_positions = {}  # 현재 열린 포지션 추적
+        self.trades = []
+        self.open_positions = {}
 
-        self.setup_ui()  # UI 구성 함수 호출
-        self.setup_focus_policy()  # 포커스 정책 설정 추가
-
-        self.setup_data_update_timer()  # 데이터 자동 업데이트 타이머 설정
+        # UI 설정
+        self.setup_ui()
+        self.setup_focus_policy()
         
-        # 시간 업데이트 타이머 설정
+        # 타이머 설정
+        self.setup_timers()
+
+    def setup_timers(self):
+        """모든 타이머 설정"""
+        # 차트 데이터 업데이트 (1분)
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self.update_data)
+        self.update_timer.start(60000)
+        
+        # 시간 표시 업데이트 (1초)
         self.time_timer = QTimer()
         self.time_timer.timeout.connect(self.update_time)
-        self.time_timer.start(1000)  # 1초마다 업데이트
+        self.time_timer.start(1000)
+    
+    def setup_chart_styles(self):
+        """차트 스타일 설정"""
+        # 차트 축 폰트 설정
+        axis_font = QFont('Mosk Normal 400', 10)
+        for axis in [self.left_chart_widget.getAxis('left'), 
+                    self.left_chart_widget.getAxis('bottom')]:
+            axis.setTickFont(axis_font)
+            axis.setPen('#4d5b7c')
+            axis.setTextPen('#e6e9ef')
         
-        # 수익률 업데이트 타이머 설정 (하루에 한 번)
-        self.profit_timer = QTimer()
-        self.profit_timer.timeout.connect(self.update_total_profit)
-        self.profit_timer.start(24 * 60 * 60 * 1000)  # 24시간마다 업데이트
-
-    def update_total_profit(self):
-        """일일 총 수익률 업데이트"""
-        # TODO: 실제 총 수익률 계산 로직 구현
-        # 예: self.total_profit_rate = (현재_잔고 - 초기_잔고) / 초기_잔고 * 100
-        
-        # 테스트용 임시 코드
-        self.total_profit_rate += np.random.uniform(-10, 10)
-        
-        # 차트 업데이트
-        self.profit_chart.update_chart(self.total_profit_rate)
-        
-        # 테이블 업데이트
-        item = QTableWidgetItem(f'{self.total_profit_rate:+.2f}%')
-        item.setTextAlignment(Qt.AlignCenter)
-        color = '#4CAF50' if self.total_profit_rate >= 0 else '#FF5252'
-        item.setForeground(QColor(color))
-        self.right_table.setItem(5, 0, item)  # 마지막 행이 Total Profit Rate
+        # 차트 배경 설정
+        self.left_chart_widget.setBackground('#2f3b54')
+        self.left_chart_widget.showGrid(x=True, y=True, alpha=0.3)
         
     def setup_focus_policy(self):
         """테이블 포커스 정책 설정"""
@@ -143,7 +140,7 @@ class TradingView(QMainWindow):
         program_name.addWidget(self.program_name)
         main_layout.addLayout(program_name)
 
-        # 본체 레이아웃
+        # 프로그램 메인 레이아웃
         body_layout = QHBoxLayout()
         main_layout.addLayout(body_layout)
 
@@ -151,7 +148,7 @@ class TradingView(QMainWindow):
         left_layout = QVBoxLayout()
         body_layout.addLayout(left_layout)
 
-        # 2. 상단 정보 섹션
+        # 1. 상단 정보 섹션
         left_top_info = QHBoxLayout()
         self.price_label = QLabel()  # 현재가 표시 라벨
         self.price_label.setStyleSheet('font-size: 16px; font-weight: bold; color: white;')
@@ -202,6 +199,13 @@ class TradingView(QMainWindow):
                 "coin": "BTC",
                 "quantity": 0.1234,
                 "liq_price": 50000.0,
+                "unrealized_pl": -5.2,
+                "realized_pl": -100.5
+            },
+            {
+                "coin": "BTC",
+                "quantity": 1,
+                "liq_price": 40000.0,
                 "unrealized_pl": 5.2,
                 "realized_pl": 100.5
             }
@@ -223,8 +227,7 @@ class TradingView(QMainWindow):
         right_chart_widget = self.profit_chart.get_widget()
         right_layout.addWidget(right_chart_widget)
 
-        # 데모 데이터 주입
-        from datetime import datetime, timedelta
+        #수익률 차트 테스트 데이터
         base_date = datetime.now()
         dates = [(base_date - timedelta(days=i)).strftime('%m/%d') for i in range(6, -1, -1)]
         test_data = [10.5, 15.2, -54.3, 8.7, 12.1, -3.2, 1055.5]
@@ -236,9 +239,9 @@ class TradingView(QMainWindow):
         self.right_table = ProfitRateTable()
         right_layout.addWidget(self.right_table)
         
-        # 테스트용 데이터
+        #수익률 표 테스트용 데이터
         test_profit_data = {
-            'my_rate': 5.2,
+            'my_rate': -5.2,
             'daily': 1.5,
             'weekly': 4.2,
             'monthly': 15.7,
@@ -263,12 +266,19 @@ class TradingView(QMainWindow):
             self.price_label.setText(f'BTC/USDT: {current_price:,.1f}')
 
         # 차트 데이터 업데이트
-        candle_data, df = self.data_fetcher.fetch_ohlcv()
+        candle_data, df = self.data_fetcher.fetch_ohlcv(timeframe='1h', limit=100)
         if candle_data is not None:
+            # 시간 레이블 생성
+            time_labels = df['timestamp'].dt.strftime('%H:%M')
+            
+            # X축 설정
+            axis = self.left_chart_widget.getAxis('bottom')
+            axis.setTicks([[(i, time_labels[i]) for i in range(0, len(df), 6)]])  # 6시간 간격으로 표시
+            
             # 캔들스틱 데이터 설정
             self.candlestick_item.set_data(candle_data)
-
-            # 라인차트 데이터 설정
+            
+            # 라인차트 데이터 갱신
             if self.line_plot is None:
                 self.line_plot = self.left_chart_widget.plot(
                     np.arange(len(df)), 
@@ -280,7 +290,13 @@ class TradingView(QMainWindow):
                     np.arange(len(df)), 
                     df['close'].values
                 )
-            self.line_plot.hide()  # 기본적으로 라인차트 숨김
+            self.line_plot.hide()
+            
+            # 차트 범위 설정
+            self.left_chart_widget.setXRange(-1, len(df))
+            
+            # 그리드 설정
+            self.left_chart_widget.showGrid(x=True, y=True, alpha=0.3)
     
     def update_time(self):
         """네이버 서버 시간을 가져와서 업데이트"""
@@ -299,7 +315,7 @@ class TradingView(QMainWindow):
             self.line_plot.show()
 
     def apply_styles(self):
-        # 전체적인 UI 스타일 적용
+        """UI 스타일 적용"""
         self.setStyleSheet('''
             QMainWindow {
                 background-color: #2a3447;
@@ -328,26 +344,5 @@ class TradingView(QMainWindow):
             }
         ''')
         
-        # 차트 축 폰트 설정
-        axis_font = QFont('Mosk Normal 400', 10)
-        self.left_chart_widget.getAxis('left').setTickFont(axis_font)
-        self.left_chart_widget.getAxis('bottom').setTickFont(axis_font)
-        
-        # 차트 배경 및 그리드 색상 설정
-        self.left_chart_widget.setBackground('#2f3b54')
-        self.left_chart_widget.getAxis('left').setPen('#4d5b7c')
-        self.left_chart_widget.getAxis('bottom').setPen('#4d5b7c')
-        self.left_chart_widget.getAxis('left').setTextPen('#e6e9ef')
-        self.left_chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
-        
-        # 차트 축 폰트 설정
-        axis_font = QFont('Mosk Normal 400', 10)
-        self.left_chart_widget.getAxis('left').setTickFont(axis_font)
-        self.left_chart_widget.getAxis('bottom').setTickFont(axis_font)
-        
-        # 차트 배경 및 그리드 색상 설정
-        self.left_chart_widget.setBackground('#2f3b54')
-        self.left_chart_widget.getAxis('left').setPen('#4d5b7c')
-        self.left_chart_widget.getAxis('bottom').setPen('#4d5b7c')
-        self.left_chart_widget.getAxis('left').setTextPen('#e6e9ef')
-        self.left_chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
+        # 차트 스타일 적용
+        self.setup_chart_styles()

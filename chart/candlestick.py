@@ -6,42 +6,39 @@ class CandlestickItem(pg.GraphicsObject):
         pg.GraphicsObject.__init__(self)
         self.picture = None
         self.data = None
+        self.time_axis = None
 
-    def set_data(self, data):
+    def set_data(self, data, timestamps=None):
         """
-        # 캔들스틱 차트의 데이터를 설정합니다
-        # 데이터 형식: [시간, 시가, 고가, 저가, 종가] 배열
+        캔들스틱 차트의 데이터를 설정합니다
+        Args:
+            data: [시간, 시가, 고가, 저가, 종가] 배열
+            timestamps: 시간 데이터 배열
         """
         self.data = data
+        self.time_axis = timestamps
         self.generate_picture()
         self.informViewBoundsChanged()
 
     def generate_picture(self):
-        # 데이터가 없으면 그냥 리턴
         if self.data is None:
             return
 
         # 봉의 너비 설정 (시간 간격의 60%)
-        w = (self.data[1][0] - self.data[0][0]) * 0.6
+        w = 0.6
         self.picture = pg.QtGui.QPicture()
         p = QPainter(self.picture)
 
-        for t, open, high, low, close in self.data:
-            # 주가 상승/하락에 따라 색상 지정
-            # 종가가 시가보다 높거나 같으면 초록색(상승)
+        for i, (t, open, high, low, close) in enumerate(self.data):
             if close >= open:
                 p.setBrush(pg.mkBrush('g'))
                 p.setPen(pg.mkPen('g'))
-            # 종가가 시가보다 낮으면 빨간색(하락)
             else:
                 p.setBrush(pg.mkBrush('r'))
                 p.setPen(pg.mkPen('r'))
 
-            # 캔들스틱 그리기
-            # 꼬리 그리기 (고가-저가 선)
-            p.drawLine(pg.QtCore.QPointF(t, low), pg.QtCore.QPointF(t, high))
-            # 몸통 그리기 (시가-종가 직사각형)
-            p.drawRect(pg.QtCore.QRectF(t - w / 2, open, w, close - open))
+            p.drawLine(pg.QtCore.QPointF(i, low), pg.QtCore.QPointF(i, high))
+            p.drawRect(pg.QtCore.QRectF(i - w/2, open, w, close - open))
 
         p.end()
 

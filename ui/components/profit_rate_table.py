@@ -56,7 +56,6 @@ class ProfitRateTable(QTableWidget):
             }
             QTableWidget::item {
                 padding: 5px;
-                color: #e6e9ef;
             }
             QTableWidget::item:selected {
                 background-color: #3d4760;
@@ -95,19 +94,6 @@ class ProfitRateTable(QTableWidget):
         ''')
         
     def update_profit_rates(self, profit_data):
-        """
-        수익률 데이터 업데이트
-        Args:
-            profit_data: 딕셔너리 형태의 수익률 데이터
-                {
-                    'my_rate': 5.2,     # 나의 수익률
-                    'daily': 1.5,       # 일간 수익률
-                    'weekly': 4.2,      # 주간 수익률
-                    'monthly': 15.7,    # 월간 수익률
-                    'yearly': 45.2,     # 연간 수익률
-                    'total': 25.5       # 총 수익률
-                }
-        """
         rates = [
             profit_data.get('my_rate', 0),
             profit_data.get('daily', 0),

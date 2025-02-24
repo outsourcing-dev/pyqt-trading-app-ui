@@ -12,7 +12,6 @@ class NaverTimeFetcher:
             datetime: 네이버 서버 시간을 한국 시간대로 변환한 datetime 객체
         """
         try:
-            # 네이버 서버에 HEAD 요청을 보내 Date 헤더를 받아옴
             response = requests.head('https://www.naver.com')
             
             # 응답 헤더에서 date 정보 추출
