@@ -202,7 +202,7 @@ class TradingView(QMainWindow):
                 "coin": "BTC",
                 "quantity": 0.1234,
                 "liq_price": 50000.0,
-                "unrealized_pl": 5.2,
+                "unrealized_pl": -5.2,
                 "realized_pl": 100.5
             }
         ]
@@ -243,7 +243,7 @@ class TradingView(QMainWindow):
             'weekly': 4.2,
             'monthly': 15.7,
             'yearly': 45.2,
-            'total': 25.5
+            'total': -25.5
         }
         self.right_table.update_profit_rates(test_profit_data)
 
@@ -298,6 +298,20 @@ class TradingView(QMainWindow):
             self.candlestick_item.hide()
             self.line_plot.show()
 
+    def apply_chart_styles(self, chart_widget):
+        """차트 위젯에 공통 스타일 적용"""
+        # 차트 축 폰트 설정
+        axis_font = QFont('Mosk Normal 400', 10)
+        chart_widget.getAxis('left').setTickFont(axis_font)
+        chart_widget.getAxis('bottom').setTickFont(axis_font)
+        
+        # 차트 배경 및 그리드 색상 설정
+        chart_widget.setBackground('#2f3b54')
+        chart_widget.getAxis('left').setPen('#4d5b7c')
+        chart_widget.getAxis('bottom').setPen('#4d5b7c')
+        chart_widget.getAxis('left').setTextPen('#e6e9ef')
+        chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
+
     def apply_styles(self):
         # 전체적인 UI 스타일 적용
         self.setStyleSheet('''
@@ -328,26 +342,5 @@ class TradingView(QMainWindow):
             }
         ''')
         
-        # 차트 축 폰트 설정
-        axis_font = QFont('Mosk Normal 400', 10)
-        self.left_chart_widget.getAxis('left').setTickFont(axis_font)
-        self.left_chart_widget.getAxis('bottom').setTickFont(axis_font)
-        
-        # 차트 배경 및 그리드 색상 설정
-        self.left_chart_widget.setBackground('#2f3b54')
-        self.left_chart_widget.getAxis('left').setPen('#4d5b7c')
-        self.left_chart_widget.getAxis('bottom').setPen('#4d5b7c')
-        self.left_chart_widget.getAxis('left').setTextPen('#e6e9ef')
-        self.left_chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
-        
-        # 차트 축 폰트 설정
-        axis_font = QFont('Mosk Normal 400', 10)
-        self.left_chart_widget.getAxis('left').setTickFont(axis_font)
-        self.left_chart_widget.getAxis('bottom').setTickFont(axis_font)
-        
-        # 차트 배경 및 그리드 색상 설정
-        self.left_chart_widget.setBackground('#2f3b54')
-        self.left_chart_widget.getAxis('left').setPen('#4d5b7c')
-        self.left_chart_widget.getAxis('bottom').setPen('#4d5b7c')
-        self.left_chart_widget.getAxis('left').setTextPen('#e6e9ef')
-        self.left_chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
+        # 왼쪽 차트에 스타일 적용
+        self.apply_chart_styles(self.left_chart_widget)

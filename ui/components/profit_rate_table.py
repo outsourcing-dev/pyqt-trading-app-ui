@@ -56,7 +56,6 @@ class ProfitRateTable(QTableWidget):
             }
             QTableWidget::item {
                 padding: 5px;
-                color: #e6e9ef;
             }
             QTableWidget::item:selected {
                 background-color: #3d4760;

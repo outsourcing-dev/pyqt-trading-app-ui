@@ -50,7 +50,6 @@ class TradeHistoryTable(QTableWidget):
             }
             QTableWidget::item {
                 padding: 5px;
-                color: #e6e9ef;
             }
             QTableWidget::item:selected {
                 background-color: #3d4760;
@@ -104,24 +103,35 @@ class TradeHistoryTable(QTableWidget):
         self.setRowCount(len(trade_data))
         
         for row, trade in enumerate(trade_data):
-            # 코인명
-            self.setItem(row, 0, QTableWidgetItem(trade['coin']))
+            # 코인명 (중앙 정렬, 흰색)
+            coin_item = QTableWidgetItem(trade['coin'])
+            coin_item.setTextAlignment(Qt.AlignCenter)
+            coin_item.setForeground(QColor('#ffffff'))
+            self.setItem(row, 0, coin_item)
             
-            # 수량 (소수점 8자리까지)
-            self.setItem(row, 1, QTableWidgetItem(f"{trade['quantity']:.8f}"))
+            # 수량 (소수점 8자리까지, 중앙 정렬, 흰색)
+            quantity_item = QTableWidgetItem(f"{trade['quantity']:.8f}")
+            quantity_item.setTextAlignment(Qt.AlignCenter)
+            quantity_item.setForeground(QColor('#ffffff'))
+            self.setItem(row, 1, quantity_item)
             
-            # 청산가 (소수점 2자리까지)
-            self.setItem(row, 2, QTableWidgetItem(f"{trade['liq_price']:.2f}"))
+            # 청산가 (소수점 2자리까지, 중앙 정렬, 흰색)
+            liq_price_item = QTableWidgetItem(f"{trade['liq_price']:.2f}")
+            liq_price_item.setTextAlignment(Qt.AlignCenter)
+            liq_price_item.setForeground(QColor('#ffffff'))
+            self.setItem(row, 2, liq_price_item)
             
-            # 미실현 손익 (색상 적용)
+            # 미실현 손익 (색상 적용, 중앙 정렬)
             unrealized = QTableWidgetItem(f"{trade['unrealized_pl']:+.2f}%")
+            unrealized.setTextAlignment(Qt.AlignCenter)
             unrealized.setForeground(
                 QColor('#4CAF50' if trade['unrealized_pl'] >= 0 else '#FF5252')
             )
             self.setItem(row, 3, unrealized)
             
-            # 실현 손익 (색상 적용)
+            # 실현 손익 (색상 적용, 중앙 정렬)
             realized = QTableWidgetItem(f"{trade['realized_pl']:+.2f}")
+            realized.setTextAlignment(Qt.AlignCenter)
             realized.setForeground(
                 QColor('#4CAF50' if trade['realized_pl'] >= 0 else '#FF5252')
             )
@@ -131,4 +141,40 @@ class TradeHistoryTable(QTableWidget):
         """새로운 거래 데이터 한 줄 추가"""
         current_row = self.rowCount()
         self.setRowCount(current_row + 1)
-        self.update_trade_history([trade])  # 마지막 줄에 새 데이터 추가
+        
+        # 마지막 행 인덱스와 trade 데이터를 사용하여 직접 행 업데이트
+        row = current_row
+        
+        # 코인명 (중앙 정렬, 흰색)
+        coin_item = QTableWidgetItem(trade['coin'])
+        coin_item.setTextAlignment(Qt.AlignCenter)
+        coin_item.setForeground(QColor('#ffffff'))
+        self.setItem(row, 0, coin_item)
+        
+        # 수량 (소수점 8자리까지, 중앙 정렬, 흰색)
+        quantity_item = QTableWidgetItem(f"{trade['quantity']:.8f}")
+        quantity_item.setTextAlignment(Qt.AlignCenter)
+        quantity_item.setForeground(QColor('#ffffff'))
+        self.setItem(row, 1, quantity_item)
+        
+        # 청산가 (소수점 2자리까지, 중앙 정렬, 흰색)
+        liq_price_item = QTableWidgetItem(f"{trade['liq_price']:.2f}")
+        liq_price_item.setTextAlignment(Qt.AlignCenter)
+        liq_price_item.setForeground(QColor('#ffffff'))
+        self.setItem(row, 2, liq_price_item)
+        
+        # 미실현 손익 (색상 적용, 중앙 정렬)
+        unrealized = QTableWidgetItem(f"{trade['unrealized_pl']:+.2f}%")
+        unrealized.setTextAlignment(Qt.AlignCenter)
+        unrealized.setForeground(
+            QColor('#4CAF50' if trade['unrealized_pl'] >= 0 else '#FF5252')
+        )
+        self.setItem(row, 3, unrealized)
+        
+        # 실현 손익 (색상 적용, 중앙 정렬)
+        realized = QTableWidgetItem(f"{trade['realized_pl']:+.2f}")
+        realized.setTextAlignment(Qt.AlignCenter)
+        realized.setForeground(
+            QColor('#4CAF50' if trade['realized_pl'] >= 0 else '#FF5252')
+        )
+        self.setItem(row, 4, realized)
