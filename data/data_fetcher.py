@@ -8,7 +8,7 @@ class DataFetcher:
         # Binance 거래소 객체 생성
         self.exchange = ccxt.binance()
 
-    def fetch_ohlcv(self, symbol='BTC/USDT', timeframe='1h', limit=100):
+    def fetch_ohlcv(self, symbol='BTC/USDT', timeframe='1m', limit=300):
         """
         Binance에서 OHLCV(시가/고가/저가/종가/거래량) 데이터를 가져옵니다
         기본값: BTC/USDT, 1시간봉, 100개 봉

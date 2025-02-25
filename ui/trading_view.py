@@ -254,8 +254,8 @@ class TradingView(QMainWindow):
         # 1분마다 데이터 자동 업데이트
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.update_data)
-        self.update_timer.start(60000)  # 60초마다
-
+        self.update_timer.start(1000)  # 60초마다
+        
     def update_data(self):
         # 현재가 업데이트
         current_price = self.data_fetcher.get_current_price()
@@ -265,6 +265,20 @@ class TradingView(QMainWindow):
         # 차트 데이터 업데이트
         candle_data, df = self.data_fetcher.fetch_ohlcv()
         if candle_data is not None:
+            # UTC 시간을 한국 시간(KST)으로 변환 (UTC+9)
+            if 'timestamp' in df.columns:
+                df['timestamp'] = df['timestamp'].dt.tz_localize('UTC').dt.tz_convert('Asia/Seoul')
+            
+            # x축 레이블 설정 - 30분 단위만 표시
+            ticks = []
+            for i, ts in enumerate(df['timestamp']):
+                # 정각(00분)이나 30분인 경우에만 레이블 추가
+                if ts.minute in [0, 30]:
+                    time_str = ts.strftime('%H:%M')
+                    ticks.append((i, time_str))
+                
+            self.left_chart_widget.getAxis('bottom').setTicks([ticks])
+            
             # 캔들스틱 데이터 설정
             self.candlestick_item.set_data(candle_data)
 
@@ -281,7 +295,7 @@ class TradingView(QMainWindow):
                     df['close'].values
                 )
             self.line_plot.hide()  # 기본적으로 라인차트 숨김
-    
+            
     def update_time(self):
         """네이버 서버 시간을 가져와서 업데이트"""
         kr_time = NaverTimeFetcher.get_naver_time()
@@ -291,7 +305,7 @@ class TradingView(QMainWindow):
 
     def update_chart(self, chart_type):
         # 차트 타입에 따라 보여줄 차트 선택
-        if chart_type == '캔들스틱':
+        if chart_type == 'Candle':
             self.candlestick_item.show()
             self.line_plot.hide()
         else:
