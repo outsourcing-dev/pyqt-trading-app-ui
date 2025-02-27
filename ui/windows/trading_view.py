@@ -199,13 +199,6 @@ class TradingView(QMainWindow):
                 "coin": "BTC",
                 "quantity": 0.1234,
                 "liq_price": 50000.0,
-                "unrealized_pl": -5.2,
-                "realized_pl": -100.5
-            },
-            {
-                "coin": "BTC",
-                "quantity": 1,
-                "liq_price": 40000.0,
                 "unrealized_pl": 5.2,
                 "realized_pl": 100.5
             }
@@ -246,7 +239,7 @@ class TradingView(QMainWindow):
             'weekly': 4.2,
             'monthly': 15.7,
             'yearly': 45.2,
-            'total': 25.5
+            'total': -25.5
         }
         self.right_table.update_profit_rates(test_profit_data)
 
@@ -257,8 +250,8 @@ class TradingView(QMainWindow):
         # 1분마다 데이터 자동 업데이트
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.update_data)
-        self.update_timer.start(60000)  # 60초마다
-
+        self.update_timer.start(1000)  # 60초마다
+        
     def update_data(self):
         # 현재가 업데이트
         current_price = self.data_fetcher.get_current_price()
@@ -268,13 +261,6 @@ class TradingView(QMainWindow):
         # 차트 데이터 업데이트
         candle_data, df = self.data_fetcher.fetch_ohlcv(timeframe='1h', limit=100)
         if candle_data is not None:
-            # 시간 레이블 생성
-            time_labels = df['timestamp'].dt.strftime('%H:%M')
-            
-            # X축 설정
-            axis = self.left_chart_widget.getAxis('bottom')
-            axis.setTicks([[(i, time_labels[i]) for i in range(0, len(df), 6)]])  # 6시간 간격으로 표시
-            
             # 캔들스틱 데이터 설정
             self.candlestick_item.set_data(candle_data)
             
@@ -290,13 +276,7 @@ class TradingView(QMainWindow):
                     np.arange(len(df)), 
                     df['close'].values
                 )
-            self.line_plot.hide()
-            
-            # 차트 범위 설정
-            self.left_chart_widget.setXRange(-1, len(df))
-            
-            # 그리드 설정
-            self.left_chart_widget.showGrid(x=True, y=True, alpha=0.3)
+            self.line_plot.hide()  # 기본적으로 라인차트 숨김
     
     def update_time(self):
         """네이버 서버 시간을 가져와서 업데이트"""
@@ -307,12 +287,26 @@ class TradingView(QMainWindow):
 
     def update_chart(self, chart_type):
         # 차트 타입에 따라 보여줄 차트 선택
-        if chart_type == '캔들스틱':
+        if chart_type == 'Candle':
             self.candlestick_item.show()
             self.line_plot.hide()
         else:
             self.candlestick_item.hide()
             self.line_plot.show()
+
+    def apply_chart_styles(self, chart_widget):
+        """차트 위젯에 공통 스타일 적용"""
+        # 차트 축 폰트 설정
+        axis_font = QFont('Mosk Normal 400', 10)
+        chart_widget.getAxis('left').setTickFont(axis_font)
+        chart_widget.getAxis('bottom').setTickFont(axis_font)
+        
+        # 차트 배경 및 그리드 색상 설정
+        chart_widget.setBackground('#2f3b54')
+        chart_widget.getAxis('left').setPen('#4d5b7c')
+        chart_widget.getAxis('bottom').setPen('#4d5b7c')
+        chart_widget.getAxis('left').setTextPen('#e6e9ef')
+        chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
 
     def apply_styles(self):
         """UI 스타일 적용"""
@@ -344,5 +338,26 @@ class TradingView(QMainWindow):
             }
         ''')
         
-        # 차트 스타일 적용
-        self.setup_chart_styles()
+        # 차트 축 폰트 설정
+        axis_font = QFont('Mosk Normal 400', 10)
+        self.left_chart_widget.getAxis('left').setTickFont(axis_font)
+        self.left_chart_widget.getAxis('bottom').setTickFont(axis_font)
+        
+        # 차트 배경 및 그리드 색상 설정
+        self.left_chart_widget.setBackground('#2f3b54')
+        self.left_chart_widget.getAxis('left').setPen('#4d5b7c')
+        self.left_chart_widget.getAxis('bottom').setPen('#4d5b7c')
+        self.left_chart_widget.getAxis('left').setTextPen('#e6e9ef')
+        self.left_chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
+        
+        # 차트 축 폰트 설정
+        axis_font = QFont('Mosk Normal 400', 10)
+        self.left_chart_widget.getAxis('left').setTickFont(axis_font)
+        self.left_chart_widget.getAxis('bottom').setTickFont(axis_font)
+        
+        # 차트 배경 및 그리드 색상 설정
+        self.left_chart_widget.setBackground('#2f3b54')
+        self.left_chart_widget.getAxis('left').setPen('#4d5b7c')
+        self.left_chart_widget.getAxis('bottom').setPen('#4d5b7c')
+        self.left_chart_widget.getAxis('left').setTextPen('#e6e9ef')
+        self.left_chart_widget.getAxis('bottom').setTextPen('#e6e9ef')
