@@ -1,90 +1,68 @@
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsDropShadowEffect
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QFontDatabase
+from PyQt5.QtGui import QColor, QFontDatabase, QFont
 import os
 
 class TradeHistoryTable(QTableWidget):
     def __init__(self):
         super().__init__(1, 5)  # 1행 5열로 초기화
-        self.load_custom_fonts()  # 폰트 로드 추가
+        self.load_custom_fonts()  # 폰트 로드
         self.setup_table()
-    
+        self.apply_modern_style()  # 현대적 스타일 적용
+
+        # 초기 빈 행에도 배경색 적용
+        self.initialize_empty_rows()
+        
+    def initialize_empty_rows(self):
+        """빈 행에 기본 배경색 적용"""
+        row_count = self.rowCount()
+        col_count = self.columnCount()
+        
+        # 모든 셀에 기본 아이템 설정
+        for row in range(row_count):
+            for col in range(col_count):
+                if self.item(row, col) is None:  # 셀이 비어있는 경우
+                    item = QTableWidgetItem("")
+                    item.setBackground(QColor("#1e222d"))  # 기본 배경색 설정
+                    self.setItem(row, col, item)
+
     def load_custom_fonts(self):
         """커스텀 폰트 로드"""
         fonts_dir = os.path.join('assets', 'fonts')
-        font_families = []
-        loaded_fonts = []
-
+        app_font_name = "NanumSquare"  # 기본값 설정
+        
         # 폰트 파일들을 QFontDatabase에 등록
-        for font_file in os.listdir(fonts_dir):
-            if font_file.endswith('.ttf'):
-                font_path = os.path.join(fonts_dir, font_file)
-                font_id = QFontDatabase.addApplicationFont(font_path)
-                if font_id != -1:
-                    families = QFontDatabase.applicationFontFamilies(font_id)
-                    # loaded_fonts.extend(families)
-        # print(f"TradeHistoryTable에 로드된 폰트: {', '.join(loaded_fonts)}")
+        font_path = os.path.join(fonts_dir, "NanumSquareOTF_acR.otf")
+        if os.path.exists(font_path):
+            font_id = QFontDatabase.addApplicationFont(font_path)
+            if font_id != -1:
+                font_families = QFontDatabase.applicationFontFamilies(font_id)
+                if font_families and font_families[0]:
+                    app_font_name = font_families[0]
+        
+        self.app_font_name = app_font_name  # 인스턴스 변수로 저장
 
     def setup_table(self):
-        """테이블 기본 설정"""
+        """테이블 기본 설정 (헤더 중앙 정렬 적용)"""
+        headers = ['코인명', '보유 수량', '청산 가격', 
+                '미실현 손익(수익률)', '실현 손익']
+        
         # 헤더 설정
-        headers = ['Coin Name', 'Quantity', 'Liquidation Price', 
-                  'Unrealized P/L (Profit Rate)', 'Realized P/L']
+        self.setColumnCount(len(headers))
         self.setHorizontalHeaderLabels(headers)
         
-        # 기본 설정
-        self.setEditTriggers(QTableWidget.NoEditTriggers)
+        # 개별 헤더 아이템을 생성하여 중앙 정렬 적용
+        for col in range(len(headers)):
+            item = QTableWidgetItem(headers[col])
+            item.setTextAlignment(Qt.AlignCenter)
+            self.setHorizontalHeaderItem(col, item)
+
+        # 헤더 크기 조정
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         
-        # 스타일 적용
-        self.apply_styles()
-        
-    def apply_styles(self):
-        """테이블 스타일 적용"""
-        self.setStyleSheet('''
-            QTableWidget {
-                gridline-color: #3d4760;
-                border: none;
-                background-color: #1e222d; 
-                font-size: 13px;
-            }
-            QTableWidget::item {
-                padding: 5px;
-            }
-            QTableWidget::item:selected {
-                background-color: #3d4760;
-                color: #ffffff;
-            }
-            QTableWidget::item:selected:!active {
-                background-color: #3d4760;
-                color: #ffffff;
-            }
-            /* 가로 헤더 스타일 */
-            QHeaderView::section:horizontal {
-                background-color: #3d4760;
-                color: #ffffff;
-                padding: 5px;
-                border: 1px solid #2a3447;
-                font-family: 'Mosk Medium 500';
-                font-size: 14px;
-            }
-            /* 세로 헤더 스타일 */
-            QHeaderView::section:vertical {
-                background-color: #3d4760;
-                color: #ffffff;
-                padding: 5px;
-                border: 1px solid #2a3447;
-            }
-            /* 헤더 자체의 배경색 */
-            QHeaderView {
-                background-color: #3d4760;
-            }
-            QTableCornerButton::section {
-                background-color: #3d4760;
-                border: 1px solid #2a3447;
-            }
-        ''')
-        
+        # 편집 비활성화
+        self.setEditTriggers(QTableWidget.NoEditTriggers)
+
     def update_trade_history(self, trade_data):
         """
         거래 기록 테이블 업데이트
@@ -101,6 +79,9 @@ class TradeHistoryTable(QTableWidget):
                 ]
         """
         self.setRowCount(len(trade_data))
+        if len(trade_data) == 0:
+            self.initialize_empty_rows()
+            return
         
         for row, trade in enumerate(trade_data):
             # 코인명 (중앙 정렬, 흰색)
@@ -178,3 +159,124 @@ class TradeHistoryTable(QTableWidget):
             QColor('#4CAF50' if trade['realized_pl'] >= 0 else '#FF5252')
         )
         self.setItem(row, 4, realized)
+
+
+    def apply_modern_style(self):
+        """거래 내역 테이블에 현대적인 스타일 적용"""
+        header_color = "#3d4760"
+        row_color = "#1e222d"
+        alt_row_color = "#252836"
+        text_color = "#e6e9ef"
+        border_color = "#4d5b7c"
+        
+        # 테이블 스타일 설정
+        self.setStyleSheet(f"""
+            QTableWidget {{
+                background-color: {row_color};
+                color: {text_color};
+                gridline-color: #3d4760;  /* 그리드라인 색상 설정 */
+                font-size: 13px;
+                border: none;
+                border-radius: 8px;
+                font-family: '{self.app_font_name}';
+            }}
+            
+            /* 모든 셀에 배경색 적용 - 빈 셀 포함 */
+            QTableWidget::item:empty {{
+                background-color: {row_color};
+            }}
+            
+            QTableWidget::item {{
+                border-bottom: 1px solid #313646;
+                padding: 5px 10px;
+                background-color: {row_color};
+            }}
+            
+            QTableWidget::item:alternate {{
+                background-color: {alt_row_color};
+            }}
+            
+            QTableWidget::item:selected {{
+                background-color: #3d4760;
+                color: white;
+            }}
+            
+            /* 헤더 스타일 - 아래 테두리 추가 */
+            QHeaderView::section {{
+                background-color: {header_color};
+                color: {text_color};
+                padding: 8px;
+                border: none;
+                border-bottom: 1px solid {border_color};  /* 헤더 아래 테두리 추가 */
+                font-family: '{self.app_font_name}';
+                font-size: 14px;
+                font-weight: bold;  /* 명시적으로 normal 지정 */
+
+            }}
+            
+            /* 수평 헤더 스타일 - 세로 구분선 명확하게 설정 */
+            QHeaderView::section:horizontal {{
+                border-right: 1px solid {border_color};  /* 세로 구분선 색상 강화 */
+                border-left: none; /* 왼쪽 테두리 제거 (중복 방지) */
+            }}
+            
+            /* 첫 번째 헤더 섹션에 왼쪽 테두리 추가 (선택사항) */
+            QHeaderView::section:horizontal:first {{
+                border-left: 1px solid {border_color};
+            }}
+            
+            /* 행 번호 헤더 스타일 추가 */
+            QHeaderView::section:vertical {{
+                background-color: {header_color};
+                color: {text_color};
+                border-right: 1px solid {border_color};
+                border-bottom: 1px solid {border_color};
+            }}
+            
+            /* 테이블 코너 버튼 스타일 (왼쪽 최상단 버튼) */
+            QTableCornerButton::section {{
+                background-color: {header_color};
+                border: 1px solid {border_color};
+            }}
+            
+            /* 스크롤바 스타일 */
+            QScrollBar:vertical {{
+                background: {row_color};
+                width: 8px;
+                margin: 0px;
+            }}
+            
+            QScrollBar::handle:vertical {{
+                background: #4d5b7c;
+                min-height: 20px;
+                border-radius: 4px;
+            }}
+            
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
+            }}
+        """)
+        
+        # 추가: 행 번호 숨기기 또는 배경색 설정
+        # self.verticalHeader().setVisible(False)  # 행 번호 숨기기
+        # 또는 행 번호를 표시하고 싶다면 아래 코드 사용
+        vheader = self.verticalHeader()
+        vheader.setStyleSheet(f"background-color: {header_color}; color: {text_color};")
+        
+        # 그림자 효과 추가
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(15)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        shadow.setOffset(0, 4)
+        self.setGraphicsEffect(shadow)
+        
+        # 교차 행 색상 설정 (줄무늬 효과)
+        self.setAlternatingRowColors(True)
+        
+        # 헤더 설정
+        header = self.horizontalHeader()
+        header.setDefaultAlignment(Qt.AlignCenter)
+        header.setStretchLastSection(True)
+        
+        # 그리드 표시 설정
+        self.setShowGrid(True)  # 그리드 보이기 활성화

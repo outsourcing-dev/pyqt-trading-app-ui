@@ -1,9 +1,12 @@
 import pyqtgraph as pg
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtWidgets import QSizePolicy, QApplication, QMainWindow, QVBoxLayout, QWidget
 import numpy as np
 from datetime import datetime, timedelta
 import sys
+
+# ✅ NanumSquareOTF_acR 폰트 적용
+app_font_name = "NanumSquareOTF_acR"
 
 class TotalProfitChart:
     def __init__(self):
@@ -14,139 +17,107 @@ class TotalProfitChart:
         """차트 기본 설정"""
         chart = pg.PlotWidget()
         chart.setBackground('#2f3b54')
-        chart.showGrid(x=True, y=True)
-        chart.setMinimumSize(320, 300)
-        chart.setMaximumSize(320, 300)
-        chart.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        chart.showGrid(x=True, y=True, alpha=0.3)  # 그리드 투명도 추가
+        chart.setMinimumSize(300, 290)  
+        chart.setMaximumSize(300, 290)  
+        chart.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)  
+
+        chart.hideButtons()  # 버튼 숨기기
         
-        # 폰트 설정
-        axis_font = QFont('Mosk Normal 400', 8)
+        # ✅ 폰트 설정 (NanumSquareOTF_acR 적용)
+        axis_font = QFont(app_font_name, 8)
         chart.getAxis('left').setTickFont(axis_font)
         chart.getAxis('bottom').setTickFont(axis_font)
-        
-        # 축 스타일 설정
-        chart.getAxis('left').setPen('#4d5b7c')
-        chart.getAxis('bottom').setPen('#4d5b7c')
+
+        # ✅ 축 스타일 설정
+        chart.getAxis('left').setPen(pg.mkPen(color='#4d5b7c', width=1))
+        chart.getAxis('bottom').setPen(pg.mkPen(color='#4d5b7c', width=1))
         chart.getAxis('left').setTextPen('#e6e9ef')
         chart.getAxis('bottom').setTextPen('#e6e9ef')
+
+        chart.getAxis('left').setWidth(30)  
+        chart.getAxis('left').setStyle(showValues=True, tickTextOffset=2)
+
+        chart.getAxis('left').setLabel('')  # Y축 레이블 제거
         
-        # Y축 레이블 설정
-        chart.getAxis('left').setLabel('Total Profit Rate (%)')
-        
-        # 기준선 (0%) 추가
-        chart.addLine(y=0, pen=pg.mkPen(color='#666666', style=pg.QtCore.Qt.DashLine))
-        
-        # x축 스타일 설정
-        chart.getAxis('bottom').setStyle(tickLength=0)  # tick 선 제거
-        
+        # ✅ 타이틀 적용
+        title_style = {'color': '#e6e9ef', 'size': '10pt', 'bold': True}
+        chart.setTitle("전체 수익률 (%)", **title_style)
+
+        # ✅ 기준선 (0%) 추가
+        chart.addLine(y=0, pen=pg.mkPen(color='#666666', width=1.5, style=pg.QtCore.Qt.DashLine))
+
+        chart.getAxis('bottom').setStyle(tickLength=3)  
+        chart.getAxis('bottom').setHeight(20)  
+
+        chart.getViewBox().setDefaultPadding(0.03)  
+        chart.setContentsMargins(1, 1, 1, 1)  
+
         return chart
 
     def update_display(self):
-        """차트 표시 업데이트"""
-        if not self.daily_total_profits:  # 데이터가 없으면 종료
+        """✅ 꺾은선 그래프로 수익률 표시"""
+        if not self.daily_total_profits:
             return
-            
-        # 차트 초기화
+
         self.chart_widget.clear()
-        
-        # 기준선 (0%) 다시 추가
-        self.chart_widget.addLine(y=0, pen=pg.mkPen(color='#666666', style=pg.QtCore.Qt.DashLine))
-        
-        # 데이터 준비
-        dates = [data[0] for data in self.daily_total_profits]
+
+        x = np.arange(len(self.daily_total_profits))
         profits = [data[1] for data in self.daily_total_profits]
-        x = np.arange(len(dates))
-        
-        # x축 날짜 레이블 설정
-        bottom_axis = self.chart_widget.getAxis('bottom')
-        bottom_axis.setTicks([[(i, dates[i]) for i in range(len(dates)) if i % 2 == 0]])  # 2일 간격으로 표시
-        
-        # y축 범위 설정
-        min_val = min(min(profits), 0)
-        max_val = max(max(profits), 0)
-        value_range = max_val - min_val
-        padding = value_range * 0.2  # 20% 여유
-        
-        # 최소 범위 설정
-        if value_range < 10:
-            padding = 5  # 최소 ±5% 범위
-            
-        self.chart_widget.setYRange(min_val - padding, max_val + padding)
-        
-        # x축 범위 설정
-        self.chart_widget.setXRange(-0.5, len(dates) - 0.5)
-        
-        # 선 그리기
-        for i in range(len(profits)):
-            if i > 0:
-                prev_profit = profits[i-1]
-                current_profit = profits[i]
-                color = '#4CAF50' if current_profit >= prev_profit else '#FF5252'
-                self.chart_widget.plot(
-                    [i-1, i],
-                    [prev_profit, current_profit],
-                    pen=pg.mkPen(color=color, width=2)
-                )
-            
-            # 데이터 포인트 (원) 그리기
+
+        # ✅ X축 날짜 라벨 설정
+        dates = [data[0] for data in self.daily_total_profits]
+        self.chart_widget.getAxis('bottom').setTicks([list(enumerate(dates))])
+
+        # ✅ Y축 범위 자동 조정
+        min_val = min(profits) * 1.2 if profits else 0
+        max_val = max(profits) * 1.2 if profits else 10
+        self.chart_widget.setYRange(min_val, max_val, padding=0.1)
+
+        # ✅ 꺾은선 그래프 그리기
+        line_pen = pg.mkPen(color="#4CAF50", width=2)  # 초록색 (상승)
+        line_pen_red = pg.mkPen(color="#FF5252", width=2)  # 빨간색 (하락)
+
+        for i in range(len(profits) - 1):
+            current_profit = profits[i]
+            next_profit = profits[i + 1]
+
+            pen = line_pen if next_profit >= current_profit else line_pen_red
+
             self.chart_widget.plot(
-                [i],
-                [profits[i]],
-                pen=None,
+                [x[i], x[i + 1]], [current_profit, next_profit],
+                pen=pen, antialias=True
+            )
+
+        # ✅ 마커 & 텍스트 추가
+        offset = max_val * 0.03  
+        for i, profit in enumerate(profits):
+            marker_color = "#4CAF50" if profit >= 0 else "#FF5252"
+
+            # 마커 추가 (동그라미)
+            self.chart_widget.plot(
+                [i], [profit],
+                pen=pg.mkPen('#FFFFFF', width=0.5),
                 symbol='o',
-                symbolSize=8,
-                symbolBrush='#4CAF50' if profits[i] >= 0 else '#FF5252'
+                symbolSize=5,
+                symbolBrush=marker_color,
+                symbolPen=pg.mkPen('#FFFFFF', width=0.5)
             )
-            
-            # 수익률 텍스트 추가
+
+            # ✅ 위/아래 정렬 유지
+            text_y = profit + offset if profit >= 0 else profit - offset
+            anchor_y = 1 if profit >= 0 else 0
+
+            # ✅ NanumSquareOTF_acR 폰트 적용 & 박스 제거
             text_item = pg.TextItem(
-                text=f'{profits[i]:+.1f}%',
-                color='#ffffff',
-                anchor=(0.5, 1) if profits[i] >= 0 else (0.5, 0)
+                text=f'{profit:+.1f}%',
+                color='#FFFFFF',
+                anchor=(0.5, anchor_y)
             )
-            text_item.setPos(i, profits[i])
+            text_item.setFont(QFont(app_font_name, 9))  # ✅ NanumSquareOTF_acR 적용
+            text_item.setPos(i, text_y)
             self.chart_widget.addItem(text_item)
-    
+
     def get_widget(self):
         """차트 위젯 반환"""
         return self.chart_widget
-
-    @classmethod
-    def demo_basic_usage(cls):
-        """기본 사용법 데모"""
-        class DemoWindow(QMainWindow):
-            def __init__(self):
-                super().__init__()
-                self.setWindowTitle('Profit Chart Demo')
-                self.setGeometry(100, 100, 400, 300)
-                
-                # 메인 위젯 설정
-                main_widget = QWidget()
-                self.setCentralWidget(main_widget)
-                layout = QVBoxLayout(main_widget)
-                
-                # 차트 생성 및 추가
-                self.chart = TotalProfitChart()
-                layout.addWidget(self.chart.get_widget())
-                
-                # 테스트를 위한 날짜 생성 (오늘부터 7일 전까지)
-                base_date = datetime.now()
-                dates = [(base_date - timedelta(days=i)).strftime('%m/%d') for i in range(6, -1, -1)]
-                
-                # 데모 데이터 추가
-                test_data = [10.5, 15.2, -5.3, 8.7, 12.1, -3.2, 20.5]
-                
-                # 날짜와 수익률을 함께 업데이트
-                for date, profit in zip(dates, test_data):
-                    self.chart.daily_total_profits.append((date, profit))
-                
-                # 차트 업데이트
-                self.chart.update_display()
-        
-        app = QApplication(sys.argv)
-        window = DemoWindow()
-        window.show()
-        sys.exit(app.exec_())
-
-if __name__ == '__main__':
-    TotalProfitChart.demo_basic_usage()
