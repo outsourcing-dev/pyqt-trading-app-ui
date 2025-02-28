@@ -386,7 +386,7 @@ class TradingView(QMainWindow):
         # 캔들스틱 데이터 설정
         self.candlestick_item.set_data(candle_data)
 
-        # 라인차트 데이터 설정
+         # 라인차트 데이터 설정
         if self.line_plot is None:
             self.line_plot = self.left_chart_widget.plot(
                 np.arange(len(df)), 
@@ -398,8 +398,15 @@ class TradingView(QMainWindow):
                 np.arange(len(df)), 
                 df['close'].values
             )
-        # 기본적으로 라인차트 숨김 (차트 타입에 따라 표시 결정)
-        self.line_plot.hide()
+        
+        # 현재 선택된 차트 타입에 따라 표시 여부 결정
+        current_chart_type = self.chart_type.currentText()
+        if current_chart_type == 'Candle':
+            self.candlestick_item.show()
+            self.line_plot.hide()
+        else:  # 'Line'
+            self.candlestick_item.hide()
+            self.line_plot.show()
     
     def update_time(self):
         """네이버 서버 시간을 가져와서 업데이트"""
@@ -427,7 +434,7 @@ class TradingView(QMainWindow):
         self.apply_chart_styles(self.left_chart_widget)
         
         # 프로그램 이름 설정
-        self.program_name.setText("Neon Crypto Trader ✨")
+        self.program_name.setText("프로그램명")
     
     def remove_graphics_effects(self):
         """기존 그래픽 효과 제거 - 중복 방지"""
