@@ -43,7 +43,7 @@ class ProfitRateTable(QTableWidget):
         self.setEditTriggers(QTableWidget.NoEditTriggers)
     
     def update_profit_rates(self, profit_data):
-        """수익률 업데이트"""
+        """수익률 업데이트 - 양수는 형광 연두색, 음수는 형광 빨간색으로 단순화"""
         rates = [
             profit_data.get('my_rate', 0),
             profit_data.get('daily', 0),
@@ -53,96 +53,24 @@ class ProfitRateTable(QTableWidget):
             profit_data.get('total', 0)
         ]
         
+        # 2가지 형광색만 사용
+        neon_green = "#39FF14"  # 양수용 형광 연두색
+        neon_red = "#FF2D2D"    # 음수용 형광 빨간색
+        
         for row, rate in enumerate(rates):
             item = QTableWidgetItem(f'{rate:+.2f}%')
             item.setTextAlignment(Qt.AlignCenter)
             
-            color = QColor('#4CAF50' if rate >= 0 else '#FF5252')
+            # 양수/음수에 따라 2가지 색상만 적용 (크기에 상관없이 동일한 색상)
+            if rate >= 0:
+                color = QColor(neon_green)  # 양수는 형광 연두색
+            else:
+                color = QColor(neon_red)    # 음수는 형광 빨간색
+            
             item.setForeground(color)
-            
-            if abs(rate) > 10:
-                bg_color = QColor(color)
-                bg_color.setAlpha(40)
-                item.setBackground(bg_color)
-            
             self.setItem(row, 0, item)
-    
+            
     def apply_modern_style(self):
-        """수익률 테이블에 현대적인 스타일 적용"""
-        header_color = "#3d4760"
-        row_color = "#1e222d"
-        alt_row_color = "#252836"
-        text_color = "#e6e9ef"
-        
-        self.setStyleSheet(f"""
-            QTableWidget {{
-                background-color: {row_color};
-                color: {text_color};
-                gridline-color: #3d4760;
-                font-size: 13px;
-                border: none;
-                border-radius: 8px;
-                font-family: '{self.app_font_name}';
-            }}
-            
-            QTableWidget::item {{
-                border-bottom: 1px solid #3d4760;
-                padding: 5px 10px;
-                background-color: {row_color};
-                font-family: '{self.app_font_name}';
-                font-weight: bold;
-            }}
-            
-            QTableWidget::item:alternate {{
-                background-color: {alt_row_color};
-            }}
-            
-            QTableWidget::item:selected {{
-                background-color: #3d4760;
-                color: white;
-            }}
-            
-            QHeaderView::section {{
-                background-color: {header_color};
-                color: {text_color};
-                padding: 8px;
-                border: none;
-                border-bottom: 1px solid #4d5b7c;
-                font-weight: normal;
-                font-family: '{self.app_font_name}';
-                text-align: center;
-                font-size: 14px;
-                font-weight: bold;  /* 명시적으로 normal 지정 */
-            }}
-            
-            QHeaderView::section:vertical {{
-                border-right: 1px solid #3d4760;
-                border-bottom: 1px solid #4d5b7c;
-                text-align: center;
-            }}
-            
-            QScrollBar:vertical {{
-                background: {row_color};
-                width: 8px;
-                margin: 0px;
-            }}
-            
-            QScrollBar::handle:vertical {{
-                background: #4d5b7c;
-                min-height: 20px;
-                border-radius: 4px;
-            }}
-            
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-                height: 0px;
-            }}
-        """)
-        
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(15)
-        shadow.setColor(QColor(0, 0, 0, 80))
-        shadow.setOffset(0, 4)
-        self.setGraphicsEffect(shadow)
-        
-        self.setAlternatingRowColors(True)
-        self.setShowGrid(True)
+        """수익률 테이블에 부드러운 네온 스타일 적용"""
+        from ui.styles import apply_soft_neon_style  # 공통 스타일 함수 임포트
+        apply_soft_neon_style(self)

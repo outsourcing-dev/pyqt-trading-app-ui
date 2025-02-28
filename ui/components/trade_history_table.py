@@ -5,7 +5,7 @@ import os
 
 class TradeHistoryTable(QTableWidget):
     def __init__(self):
-        super().__init__(1, 5)  # 1행 5열로 초기화
+        super().__init__(10, 5)  # 10행 5열로 초기화
         self.load_custom_fonts()  # 폰트 로드
         self.setup_table()
         self.apply_modern_style()  # 현대적 스타일 적용
@@ -14,17 +14,24 @@ class TradeHistoryTable(QTableWidget):
         self.initialize_empty_rows()
         
     def initialize_empty_rows(self):
-        """빈 행에 기본 배경색 적용"""
+        """빈 행에 기본 배경색 적용 - 모든 행의 모든 셀에 적용"""
         row_count = self.rowCount()
         col_count = self.columnCount()
+        
+        # 어두운 보라색 배경 (styles.py와 동일한 색상 사용)
+        dark_bg = "#0F0326"  # 매우 어두운 보라색 배경
         
         # 모든 셀에 기본 아이템 설정
         for row in range(row_count):
             for col in range(col_count):
                 if self.item(row, col) is None:  # 셀이 비어있는 경우
                     item = QTableWidgetItem("")
-                    item.setBackground(QColor("#1e222d"))  # 기본 배경색 설정
+                    item.setBackground(QColor(dark_bg))  # 기본 배경색 설정
                     self.setItem(row, col, item)
+    
+        # 세로 헤더(행 번호) 색상 설정
+        vheader = self.verticalHeader()
+        vheader.setStyleSheet(f"background-color: {dark_bg}; color: #077A8F;")  # 부드러운 청록색 텍스트
 
     def load_custom_fonts(self):
         """커스텀 폰트 로드"""
@@ -78,8 +85,16 @@ class TradeHistoryTable(QTableWidget):
                     }
                 ]
         """
+        # 현재 테이블 행 수 저장
+        current_rows = self.rowCount()
+        
+        # 데이터에 맞게 행 수 설정 (기존과 동일)
         self.setRowCount(len(trade_data))
+        
+        # 이미 있는 데이터 처리 (기존 코드 그대로)
         if len(trade_data) == 0:
+            # 데이터가 없을 때도 10행은 유지
+            self.setRowCount(10)
             self.initialize_empty_rows()
             return
         
@@ -117,6 +132,17 @@ class TradeHistoryTable(QTableWidget):
                 QColor('#4CAF50' if trade['realized_pl'] >= 0 else '#FF5252')
             )
             self.setItem(row, 4, realized)
+        
+        # 데이터 업데이트 후, 남은 셀도 배경색 설정
+        # 만약 데이터가 10개 미만이면 10행까지 채움
+        if len(trade_data) < 10:
+            self.setRowCount(10)
+            # row_count부터 10까지 비어있는 행을 채움
+            for row in range(len(trade_data), 10):
+                for col in range(self.columnCount()):
+                    item = QTableWidgetItem("")
+                    item.setBackground(QColor("#0F0326"))  # 어두운 보라색 배경
+                    self.setItem(row, col, item)
             
     def add_trade(self, trade):
         """새로운 거래 데이터 한 줄 추가"""
@@ -162,121 +188,20 @@ class TradeHistoryTable(QTableWidget):
 
 
     def apply_modern_style(self):
-        """거래 내역 테이블에 현대적인 스타일 적용"""
-        header_color = "#3d4760"
-        row_color = "#1e222d"
-        alt_row_color = "#252836"
-        text_color = "#e6e9ef"
-        border_color = "#4d5b7c"
+        """거래 내역 테이블에 부드러운 네온 스타일 적용"""
+        from ui.styles import apply_soft_neon_style  # 공통 스타일 함수 임포트
+        apply_soft_neon_style(self)
         
-        # 테이블 스타일 설정
-        self.setStyleSheet(f"""
-            QTableWidget {{
-                background-color: {row_color};
-                color: {text_color};
-                gridline-color: #3d4760;  /* 그리드라인 색상 설정 */
-                font-size: 13px;
-                border: none;
-                border-radius: 8px;
-                font-family: '{self.app_font_name}';
-            }}
-            
-            /* 모든 셀에 배경색 적용 - 빈 셀 포함 */
-            QTableWidget::item:empty {{
-                background-color: {row_color};
-            }}
-            
-            QTableWidget::item {{
-                border-bottom: 1px solid #313646;
-                padding: 5px 10px;
-                background-color: {row_color};
-            }}
-            
-            QTableWidget::item:alternate {{
-                background-color: {alt_row_color};
-            }}
-            
-            QTableWidget::item:selected {{
-                background-color: #3d4760;
-                color: white;
-            }}
-            
-            /* 헤더 스타일 - 아래 테두리 추가 */
-            QHeaderView::section {{
-                background-color: {header_color};
-                color: {text_color};
-                padding: 8px;
-                border: none;
-                border-bottom: 1px solid {border_color};  /* 헤더 아래 테두리 추가 */
-                font-family: '{self.app_font_name}';
-                font-size: 14px;
-                font-weight: bold;  /* 명시적으로 normal 지정 */
-
-            }}
-            
-            /* 수평 헤더 스타일 - 세로 구분선 명확하게 설정 */
-            QHeaderView::section:horizontal {{
-                border-right: 1px solid {border_color};  /* 세로 구분선 색상 강화 */
-                border-left: none; /* 왼쪽 테두리 제거 (중복 방지) */
-            }}
-            
-            /* 첫 번째 헤더 섹션에 왼쪽 테두리 추가 (선택사항) */
-            QHeaderView::section:horizontal:first {{
-                border-left: 1px solid {border_color};
-            }}
-            
-            /* 행 번호 헤더 스타일 추가 */
-            QHeaderView::section:vertical {{
-                background-color: {header_color};
-                color: {text_color};
-                border-right: 1px solid {border_color};
-                border-bottom: 1px solid {border_color};
-            }}
-            
-            /* 테이블 코너 버튼 스타일 (왼쪽 최상단 버튼) */
-            QTableCornerButton::section {{
-                background-color: {header_color};
-                border: 1px solid {border_color};
-            }}
-            
-            /* 스크롤바 스타일 */
-            QScrollBar:vertical {{
-                background: {row_color};
-                width: 8px;
-                margin: 0px;
-            }}
-            
-            QScrollBar::handle:vertical {{
-                background: #4d5b7c;
-                min-height: 20px;
-                border-radius: 4px;
-            }}
-            
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-                height: 0px;
-            }}
-        """)
-        
-        # 추가: 행 번호 숨기기 또는 배경색 설정
-        # self.verticalHeader().setVisible(False)  # 행 번호 숨기기
-        # 또는 행 번호를 표시하고 싶다면 아래 코드 사용
-        vheader = self.verticalHeader()
-        vheader.setStyleSheet(f"background-color: {header_color}; color: {text_color};")
-        
-        # 그림자 효과 추가
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(15)
-        shadow.setColor(QColor(0, 0, 0, 80))
-        shadow.setOffset(0, 4)
-        self.setGraphicsEffect(shadow)
-        
-        # 교차 행 색상 설정 (줄무늬 효과)
-        self.setAlternatingRowColors(True)
-        
-        # 헤더 설정
+        # 테이블 특정 설정 추가
         header = self.horizontalHeader()
         header.setDefaultAlignment(Qt.AlignCenter)
         header.setStretchLastSection(True)
         
-        # 그리드 표시 설정
-        self.setShowGrid(True)  # 그리드 보이기 활성화
+        # 세로 헤더(행 번호) 색상 적용
+        dark_bg = "#0F0326"  # 어두운 보라색 배경
+        soft_cyan = "#077A8F"  # 부드러운 청록색
+        vheader = self.verticalHeader()
+        vheader.setStyleSheet(f"background-color: {dark_bg}; color: {soft_cyan};")
+        
+        # 빈 셀에도 배경색을 적용하기 위해 한 번 더 모든 셀 초기화
+        self.initialize_empty_rows()
