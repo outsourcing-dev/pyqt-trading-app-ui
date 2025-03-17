@@ -156,12 +156,12 @@ class TradingView(QMainWindow):
         # 1. 상단 정보 섹션
         self.setup_top_info(parent_layout)
         
-        # 2. 차트 영역 설정
-        self.setup_chart(parent_layout)
-        
-        # 3. 거래 기록 테이블
+        # 2. 거래 기록 테이블
         self.left_table = TradeHistoryTable()
         parent_layout.addWidget(self.left_table)
+        
+        # 3. 차트 영역 설정
+        self.setup_chart(parent_layout)
     
     def setup_top_info(self, parent_layout):
         """상단 정보 영역 설정 (가격, 차트 타입, 시간)"""
@@ -290,7 +290,7 @@ class TradingView(QMainWindow):
         # 테스트 데이터 생성
         base_date = datetime.now()
         dates = [(base_date - timedelta(days=i)).strftime('%m/%d') for i in range(6, -1, -1)]
-        test_data = [10.5, 15.2, -54.3, 8.7, 12.1, -3.2, 150.5]
+        test_data = [1,-6.4]
         
         for date, profit in zip(dates, test_data):
             self.profit_chart.daily_total_profits.append((date, profit))
